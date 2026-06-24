@@ -166,7 +166,7 @@ function renderKPIs(){
   const bl=DADOS.filter(d=>d.data===lastD&&segsAll.includes(d.segmento)).reduce((s,d)=>s+d.backlog,0);
   const aop=dados.reduce((s,d)=>s+d.atraso_op,0);
   const ot=total>0?(np/total*100).toFixed(1):0;
-  const otC=ot>=90?'green':ot>=75?'amber':'red';
+  const otC=ot>=95?'green':ot>=85?'amber':'red';
   const allP=DADOS.filter(d=>d.data>=ini&&d.data<=fim&&d.segmento!=='TIKTOK J\u0026T');
   const tS=allP.reduce((s,d)=>s+(d.total_sallve||0),0);
   const tC=allP.reduce((s,d)=>s+(d.total_c1g||0),0);
@@ -180,7 +180,7 @@ function renderKPIs(){
     '<div class="kpi purple"><div class="kpi-label">Atraso Operacional</div><div class="kpi-value">'+fmt(aop)+'</div><div class="kpi-sub">Unilog atrasou</div></div>';
   const ab=document.getElementById('alert-bar');
   if(bl>500){ab.style.display='flex';ab.className='alert-bar danger';ab.innerHTML='Backlog elevado: '+fmt(bl)+' pedidos sem expedi&#231;&#227;o.';}
-  else if(ot<85){ab.style.display='flex';ab.className='alert-bar warn';ab.innerHTML='On-time abaixo de 85% ('+ot+'%).';}
+  else if(ot<95){ab.style.display='flex';ab.className='alert-bar warn';ab.innerHTML='On-time abaixo de 95% ('+ot+'%).';}
   else{ab.style.display='flex';ab.className='alert-bar ok';ab.innerHTML='Opera&#231;&#227;o dentro dos par&#226;metros. On-time: '+ot+'% | Backlog: '+fmt(bl)+'.';}
 }
 
