@@ -121,7 +121,7 @@
 <script>
 var DADOS = null; // dados carregados via fetch
 
-const CSV_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vRCQD3yrKaxsnJIUD0sVLn6EkiMtHg8CGcjBwaaqB6hjalsNuTqOBKAH_F7sUT_8zd1T4JEj91HWo6N/pub?gid=1393299912&single=true&output=csv';
+const CSV_URL = 'https://script.google.com/macros/s/AKfycbwOAMr0r9x0RUFB1dvx1Ze5ABEJD_Z3mLH43draSOj-ohaSHLpOUjdC1YdT_ca5ii4S/exec';
 const FERIADOS_SET = new Set(['2026-06-04','2026-09-07','2026-10-12','2026-11-02','2026-11-15','2026-11-20','2026-12-25']);
 const STATUS_EXPEDIDO = new Set(['EMBARCADO','EXPEDIDO']);
 
@@ -300,9 +300,8 @@ async function carregarDados() {
   try {
     document.getElementById('kpi-grid').innerHTML = '<div style="grid-column:1/-1;color:var(--muted);font-size:13px;padding:20px 0">Carregando dados...</div>';
     const resp = await fetch(CSV_URL);
-    if(!resp.ok) throw new Error('Erro ao buscar CSV: ' + resp.status);
-    const text = await resp.text();
-    const rows = parseCSV(text);
+    if(!resp.ok) throw new Error('Erro ao buscar dados: ' + resp.status);
+    const rows = await resp.json();
     if(!rows.length) throw new Error('Planilha vazia ou sem dados');
 
     // Definir DADOS globalmente
