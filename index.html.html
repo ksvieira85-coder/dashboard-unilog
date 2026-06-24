@@ -1,0 +1,633 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Dashboard Operacional · Unilog</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<style>
+  :root{--bg:#0f1117;--surface:#1a1d27;--surface2:#222535;--border:#2e3147;--text:#e8eaf6;--muted:#7b80a0;--green:#22c55e;--amber:#f59e0b;--red:#ef4444;--blue:#3b82f6;--purple:#a855f7;--teal:#14b8a6;--orange:#f97316;--green-dim:rgba(34,197,94,.12);--amber-dim:rgba(245,158,11,.12);--red-dim:rgba(239,68,68,.12);--blue-dim:rgba(59,130,246,.12);}
+  *{box-sizing:border-box;margin:0;padding:0}body{background:var(--bg);color:var(--text);font-family:'Inter',system-ui,sans-serif;font-size:14px}
+  header{background:var(--surface);border-bottom:1px solid var(--border);padding:16px 24px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:100}
+  .logo{display:flex;align-items:center;gap:10px}.logo-icon{width:32px;height:32px;background:linear-gradient(135deg,var(--blue),var(--purple));border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:16px}
+  .logo h1{font-size:16px;font-weight:700;letter-spacing:-.3px}.logo span{color:var(--muted);font-size:12px}.header-meta{color:var(--muted);font-size:12px;text-align:right}
+  .filters{background:var(--surface);border-bottom:1px solid var(--border);padding:12px 24px;display:flex;align-items:center;gap:16px;flex-wrap:wrap}
+  .filter-group{display:flex;align-items:center;gap:8px}.filter-group label{color:var(--muted);font-size:12px;font-weight:500;white-space:nowrap}
+  .filter-group input[type="date"],.filter-group select{background:var(--surface2);border:1px solid var(--border);color:var(--text);padding:6px 10px;border-radius:6px;font-size:12px}
+  .btn{padding:7px 16px;border-radius:6px;border:none;font-size:12px;font-weight:600;cursor:pointer;transition:opacity .15s}.btn:hover{opacity:.85}
+  .btn-primary{background:var(--blue);color:#fff}.btn-ghost{background:var(--surface2);color:var(--text);border:1px solid var(--border)}
+  .seg-pills{display:flex;gap:6px;flex-wrap:wrap}.pill{padding:5px 12px;border-radius:20px;border:1px solid var(--border);background:transparent;color:var(--muted);font-size:11px;font-weight:600;cursor:pointer;transition:all .15s}
+  .pill.active{background:var(--blue);border-color:var(--blue);color:#fff}
+  .pill[data-seg="ES"].active{background:var(--teal);border-color:var(--teal)}
+  .pill[data-seg="SP"].active{background:var(--purple);border-color:var(--purple)}
+  .pill[data-seg="RJ"].active{background:var(--green);border-color:var(--green)}
+  .pill[data-seg="TT"].active{background:var(--orange);border-color:var(--orange)}
+  main{padding:20px 24px;max-width:1400px;margin:0 auto}
+  .kpi-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px;margin-bottom:20px}
+  .kpi{background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:16px;position:relative;overflow:hidden}
+  .kpi::before{content:'';position:absolute;top:0;left:0;right:0;height:3px}
+  .kpi.green::before{background:var(--green)}.kpi.amber::before{background:var(--amber)}.kpi.red::before{background:var(--red)}.kpi.blue::before{background:var(--blue)}.kpi.purple::before{background:var(--purple)}.kpi.orange::before{background:var(--orange)}.kpi.teal::before{background:var(--teal)}
+  .kpi-label{color:var(--muted);font-size:11px;font-weight:500;text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px}
+  .kpi-value{font-size:24px;font-weight:800;line-height:1;letter-spacing:-1px}.kpi-sub{color:var(--muted);font-size:11px;margin-top:4px}
+  .kpi.green .kpi-value{color:var(--green)}.kpi.amber .kpi-value{color:var(--amber)}.kpi.red .kpi-value{color:var(--red)}.kpi.blue .kpi-value{color:var(--blue)}.kpi.purple .kpi-value{color:var(--purple)}.kpi.orange .kpi-value{color:var(--orange)}.kpi.teal .kpi-value{color:var(--teal)}
+  .alert-bar{display:flex;align-items:center;gap:10px;padding:10px 16px;border-radius:8px;margin-bottom:20px;border:1px solid;font-size:12px;font-weight:500}
+  .alert-bar.warn{background:var(--amber-dim);border-color:var(--amber);color:var(--amber)}.alert-bar.danger{background:var(--red-dim);border-color:var(--red);color:var(--red)}.alert-bar.ok{background:var(--green-dim);border-color:var(--green);color:var(--green)}
+  .charts-grid{display:grid;grid-template-columns:2fr 1fr;gap:16px;margin-bottom:16px}
+  .charts-grid-3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px;margin-bottom:16px}
+  .charts-grid-2{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:16px}
+  .card{background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:16px}
+  .card-title{font-size:13px;font-weight:700;margin-bottom:4px}.card-sub{color:var(--muted);font-size:11px;margin-bottom:14px}
+  .section-label{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:var(--orange);margin-bottom:12px;display:flex;align-items:center;gap:6px}
+  .section-label.sallve{color:var(--blue)}
+  .table-wrap{overflow-x:auto}table{width:100%;border-collapse:collapse;font-size:12px}
+  th{color:var(--muted);font-weight:600;text-transform:uppercase;letter-spacing:.4px;font-size:10px;padding:8px 10px;border-bottom:1px solid var(--border);text-align:left;white-space:nowrap}
+  td{padding:7px 10px;border-bottom:1px solid rgba(46,49,71,.5);white-space:nowrap}tr:last-child td{border-bottom:none}tr:hover td{background:rgba(255,255,255,.02)}
+  .badge{display:inline-block;padding:2px 8px;border-radius:4px;font-size:10px;font-weight:700}
+  .badge.ok{background:var(--green-dim);color:var(--green)}.badge.warn{background:var(--amber-dim);color:var(--amber)}.badge.danger{background:var(--red-dim);color:var(--red)}.badge.info{background:var(--blue-dim);color:var(--blue)}
+  .tag-fim-semana{display:inline-block;padding:1px 6px;border-radius:3px;font-size:9px;font-weight:700;background:rgba(168,85,247,.15);color:var(--purple);margin-left:4px}
+  .tag-feriado{display:inline-block;padding:1px 6px;border-radius:3px;font-size:9px;font-weight:700;background:rgba(239,68,68,.15);color:var(--red);margin-left:4px}
+  .insight-box{background:var(--surface2);border-left:3px solid var(--purple);border-radius:0 8px 8px 0;padding:10px 12px;margin-bottom:8px;font-size:11px;line-height:1.6}
+  .insight-box strong{color:var(--purple)}.insight-box.orange{border-color:var(--orange)}.insight-box.orange strong{color:var(--orange)}.insight-box.red{border-color:var(--red)}.insight-box.red strong{color:var(--red)}
+  footer{border-top:1px solid var(--border);padding:16px 24px;color:var(--muted);font-size:11px;display:flex;justify-content:space-between;margin-top:32px}
+  @media(max-width:900px){.charts-grid,.charts-grid-3,.charts-grid-2{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+<header>
+  <div class="logo">
+    <div class="logo-icon">&#128230;</div>
+    <div><h1>Dashboard Operacional &middot; Unilog</h1><span>Sallve ES &middot; SP &middot; RJ &middot; TikTok J&amp;T</span></div>
+  </div>
+  <div class="header-meta"><div>Per&iacute;odo: 12/05/2026 &ndash; 24/06/2026</div><div>Atualizado: <span id="last-update"></span></div></div>
+</header>
+<div class="filters">
+  <div class="filter-group"><label>De</label><input type="date" id="dt-ini" value="2026-05-12"></div>
+  <div class="filter-group"><label>At&eacute;</label><input type="date" id="dt-fim" value="2026-06-24"></div>
+  <button class="btn btn-primary" onclick="aplicarFiltros()">Filtrar</button>
+  <button class="btn btn-ghost" onclick="resetFiltros()">Limpar</button>
+  <div style="width:1px;height:24px;background:var(--border);margin:0 4px"></div>
+  <div class="seg-pills">
+    <button class="pill active" data-seg="TODOS" onclick="toggleSeg(this)">Todos CDs</button>
+    <button class="pill" data-seg="ES" onclick="toggleSeg(this)">ES</button>
+    <button class="pill" data-seg="SP" onclick="toggleSeg(this)">SP</button>
+    <button class="pill" data-seg="RJ" onclick="toggleSeg(this)">RJ</button>
+    <button class="pill" data-seg="TT" onclick="toggleSeg(this)">TikTok J&amp;T</button>
+  </div>
+</div>
+<main>
+  <div id="alert-bar" class="alert-bar ok" style="display:none"></div>
+  <div class="kpi-grid" id="kpi-grid"></div>
+  <div class="charts-grid">
+    <div class="card"><div class="card-title">Volume Di&aacute;rio de Pedidos Importados</div><div class="card-sub">Por data de importa&ccedil;&atilde;o &mdash; FDS em roxo, feriados em vermelho</div><div><canvas id="chart-volume" height="90"></canvas></div></div>
+    <div class="card"><div class="card-title">Status de Despacho</div><div class="card-sub">Distribui&ccedil;&atilde;o no per&iacute;odo</div><div><canvas id="chart-pizza" height="200"></canvas></div></div>
+  </div>
+  <div class="charts-grid-2">
+    <div class="card"><div class="card-title">Evolu&ccedil;&atilde;o do Backlog</div><div class="card-sub">Pedidos sem expedi&ccedil;&atilde;o acumulados</div><div><canvas id="chart-backlog" height="100"></canvas></div></div>
+    <div class="card"><div class="card-title">Taxa On-Time por CD</div><div class="card-sub">% despachos dentro do prazo</div><div><canvas id="chart-ontime" height="100"></canvas></div></div>
+  </div>
+  <div class="card" style="margin-bottom:16px">
+    <div class="section-label sallve">&#9889; An&aacute;lise de Capacidade Operacional</div>
+    <div class="charts-grid-3">
+      <div><div class="card-title">Capacidade vs. Volume por CD</div><div class="card-sub">M&eacute;dia/pico vs. capacidade estimada</div><div><canvas id="cap-bars" height="160"></canvas></div></div>
+      <div><div class="card-title">Volume M&eacute;dio por Dia da Semana</div><div class="card-sub">M&eacute;dia por dia &middot; FDS em roxo</div><div><canvas id="chart-fds" height="160"></canvas></div></div>
+      <div><div class="card-title">Insights Operacionais</div><div class="card-sub">Padr&otilde;es e atrasos por projeto</div><div id="insights-box" style="overflow-y:auto;max-height:220px"></div></div>
+    </div>
+  </div>
+  <div class="card" style="margin-bottom:16px" id="tiktok-section">
+    <div class="section-label">&#128722; TikTok J&amp;T &mdash; Detalhe por Hor&aacute;rio de Corte</div>
+    <div class="charts-grid-2">
+      <div><div class="card-title">Importados at&eacute; 12h vs. ap&oacute;s 12h</div><div class="card-sub">Volume di&aacute;rio por janela de corte</div><div><canvas id="chart-tt-corte" height="120"></canvas></div></div>
+      <div><div class="card-title">Preparados vs. Despachados</div><div class="card-sub">Confer&ecirc;ncia e expedi&ccedil;&atilde;o por dia</div><div><canvas id="chart-tt-prep" height="120"></canvas></div></div>
+    </div>
+  </div>
+  <div class="card" style="margin-bottom:16px" id="ecomm-prep-section">
+    <div class="section-label sallve">&#128230; ES &middot; SP &middot; RJ &mdash; Preparados vs. Despachados</div>
+    <div class="charts-grid-3">
+      <div><div class="card-title">Esp&iacute;rito Santo (ES)</div><div class="card-sub">Conferidos vs. expedidos por dia</div><div><canvas id="chart-es-prep" height="130"></canvas></div></div>
+      <div><div class="card-title">S&atilde;o Paulo (SP)</div><div class="card-sub">Conferidos vs. expedidos por dia</div><div><canvas id="chart-sp-prep" height="130"></canvas></div></div>
+      <div><div class="card-title">Rio de Janeiro (RJ)</div><div class="card-sub">Conferidos vs. expedidos por dia</div><div><canvas id="chart-rj-prep" height="130"></canvas></div></div>
+    </div>
+  </div>
+  <div class="card">
+    <div class="card-title">Tabela Di&aacute;ria Detalhada</div>
+    <div class="card-sub">Total, No Prazo e Fora Prazo por Dt Importa&ccedil;&atilde;o &middot; <span style="color:var(--purple)">Atraso op. = Unilog demorou conferir</span> &middot; <span style="color:var(--orange)">TikTok D+0 &middot; Sallve D+1 (FDS=D+1)</span></div>
+    <div class="table-wrap"><table id="tabela-diaria"><thead></thead><tbody></tbody></table></div>
+  </div>
+</main>
+<footer>
+  <span>Unilog &middot; Dashboard Operacional 2026</span>
+  <span>Feriados: 04/Jun &middot; 07/Set &middot; 12/Out &middot; 02/Nov &middot; 15/Nov &middot; 20/Nov &middot; 25/Dez &middot; Cap. ES=4.000 &middot; SP=1.300 &middot; RJ=500</span>
+</footer>
+<script>
+var DADOS = null; // dados carregados via fetch
+
+const CSV_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vRCQD3yrKaxsnJIUD0sVLn6EkiMtHg8CGcjBwaaqB6hjalsNuTqOBKAH_F7sUT_8zd1T4JEj91HWo6N/pub?gid=1393299912&single=true&output=csv';
+const FERIADOS_SET = new Set(['2026-06-04','2026-09-07','2026-10-12','2026-11-02','2026-11-15','2026-11-20','2026-12-25']);
+const STATUS_EXPEDIDO = new Set(['EMBARCADO','EXPEDIDO']);
+
+// Mostrar loading
+document.addEventListener('DOMContentLoaded', () => {
+  document.getElementById('kpi-grid').innerHTML = '<div style="grid-column:1/-1;color:var(--muted);font-size:13px;padding:20px 0">Carregando dados do Sheets...</div>';
+  carregarDados();
+});
+
+function isFdsFer(dateStr) {
+  const d = new Date(dateStr + 'T12:00:00');
+  return d.getDay() === 0 || d.getDay() === 6 || FERIADOS_SET.has(dateStr);
+}
+
+function addDias(dateStr, n) {
+  const d = new Date(dateStr + 'T12:00:00');
+  d.setDate(d.getDate() + n);
+  return d.toISOString().slice(0,10);
+}
+
+function proxDiaUtil(dateStr) {
+  let d = addDias(dateStr, 1);
+  while(new Date(d+'T12:00:00').getDay()===0 || new Date(d+'T12:00:00').getDay()===6 || FERIADOS_SET.has(d)) {
+    d = addDias(d, 1);
+  }
+  return d;
+}
+
+function segDiaUtil(dateStr) { return proxDiaUtil(proxDiaUtil(dateStr)); }
+
+function parseCSV(text) {
+  const lines = text.trim().split('\n');
+  const headers = lines[0].split(',').map(h => h.replace(/"/g,'').trim());
+  return lines.slice(1).map(line => {
+    // Parser CSV que respeita aspas
+    const vals = [];
+    let cur = '', inQ = false;
+    for(let i=0; i<line.length; i++) {
+      if(line[i]==='"') { inQ=!inQ; }
+      else if(line[i]===',' && !inQ) { vals.push(cur.trim()); cur=''; }
+      else { cur += line[i]; }
+    }
+    vals.push(cur.trim());
+    const obj = {};
+    headers.forEach((h,i) => obj[h] = vals[i]||'');
+    return obj;
+  });
+}
+
+function toDate(str) {
+  if(!str || str.trim()==='') return null;
+  // Formatos: DD/MM/YYYY HH:MM:SS ou YYYY-MM-DD
+  str = str.trim().replace(/"/g,'');
+  if(str.includes('/')) {
+    const parts = str.split(' ')[0].split('/');
+    if(parts.length===3) return parts[2]+'-'+parts[1].padStart(2,'0')+'-'+parts[0].padStart(2,'0');
+  }
+  return str.slice(0,10);
+}
+
+function processarDados(rows) {
+  // Filtrar BTC B2B e Cancelados
+  rows = rows.filter(r => !String(r['Depositante']||'').includes('BTC B2B'));
+  rows = rows.filter(r => r['Situacao'] !== 'CANCELADO' && r['Situação'] !== 'CANCELADO');
+
+  // Normalizar campo Situacao
+  rows.forEach(r => {
+    r._sit = r['Situacao'] || r['Situação'] || '';
+    r._dep = r['Depositante'] || '';
+    r._transp = r['Transportadora'] || '';
+    r._proj = r['Projeto'] || 'Pedidos Sallve';
+    r._isTT = r._transp === 'J&T EXPRESS BRAZIL LTDA - TikTok';
+    r._dtImp  = toDate(r['Dt Importado'] || r['Dt Importação'] || '');
+    r._dtConf = toDate(r['Dt Conferencia'] || r['Dt Conferência'] || '');
+    r._dtExp  = toDate(r['Dt Expedicao'] || r['Dt Expedição'] || '');
+    r._horaImp = 0;
+    const raw = r['Dt Importado'] || r['Dt Importação'] || '';
+    const timePart = raw.includes(' ') ? raw.split(' ')[1] : '';
+    if(timePart) {
+      const tp = timePart.split(':');
+      r._horaImp = parseInt(tp[0]||0) + parseInt(tp[1]||0)/60;
+    }
+    r._isBacklog = !STATUS_EXPEDIDO.has(r._sit);
+    if(r._dtImp) {
+      r._dl1 = proxDiaUtil(r._dtImp);
+      r._dl2 = segDiaUtil(r._dtImp);
+    } else {
+      r._dl1 = null; r._dl2 = null;
+    }
+  });
+
+  // Classificar status
+  rows.forEach(r => {
+    if(!r._dtExp || !r._dl1) { r._status = 'sem_expedicao'; return; }
+    if(r._isTT) {
+      if(r._dtExp === r._dtImp)      r._status = 'tt_prazo';
+      else if(r._dtExp <= r._dl2)    r._status = 'tt_24_48';
+      else                            r._status = 'tt_fora_sla';
+    } else {
+      if(r._dtExp <= r._dl1)         r._status = 'no_prazo';
+      else                            r._status = 'fora_prazo';
+    }
+  });
+
+  // Atraso operacional
+  rows.forEach(r => {
+    r._atrOp = !!(r._dtConf && r._dl1 && r._dtConf > r._dl1);
+  });
+
+  // Agrupar por data de importação
+  const datas = [...new Set(rows.filter(r=>r._dtImp).map(r=>r._dtImp))].sort();
+  const registros = [];
+
+  datas.forEach(dt => {
+    const dow = (new Date(dt+'T12:00:00').getDay() + 6) % 7; // 0=Seg...6=Dom
+    const fdsFer = isFdsFer(dt);
+    const grp = rows.filter(r => r._dtImp === dt);
+    const tt  = grp.filter(r => r._isTT);
+
+    const ttBl = rows.filter(r => r._isTT && r._dtImp <= dt && r._isBacklog).length;
+    const ttPrep = rows.filter(r => r._isTT && r._dtConf === dt).length;
+    const ttDesp = tt.filter(r => r._dtExp).length;
+    const ttExpDia = rows.filter(r => r._isTT && r._dtExp === dt);
+
+    registros.push({
+      data: dt, dow, segmento: 'TIKTOK J&T',
+      total: tt.length,
+      no_prazo: tt.filter(r=>r._status==='tt_prazo'||r._status==='tt_24_48').length,
+      fora_prazo: tt.filter(r=>r._status==='tt_fora_sla').length,
+      backlog: ttBl, atraso_op: 0,
+      tiktok_ate12: tt.filter(r=>r._horaImp<=12).length,
+      tiktok_apos12: tt.filter(r=>r._horaImp>12).length,
+      tiktok_prep: ttPrep, tiktok_desp: ttDesp,
+      tiktok_prazo: tt.filter(r=>r._status==='tt_prazo').length,
+      tiktok_24_48: tt.filter(r=>r._status==='tt_24_48').length,
+      tiktok_fora_sla: tt.filter(r=>r._status==='tt_fora_sla').length,
+      tiktok_backlog: ttBl,
+      is_fds_fer: fdsFer, es_cd_total: 0,
+      atraso_sallve: 0, atraso_c1g: 0,
+      total_sallve: 0, total_c1g: 0,
+      prep: 0, desp: 0
+    });
+
+    ['SALLVE ES','SALLVE SP','SALLVE RJ'].forEach(dep => {
+      const sg = grp.filter(r => !r._isTT && r._dep === dep);
+      const bl = rows.filter(r => !r._isTT && r._dep===dep && r._dtImp<=dt && r._isBacklog).length;
+      const prep = rows.filter(r => !r._isTT && r._dep===dep && r._dtConf===dt).length;
+      const desp = sg.filter(r => r._dtExp).length;
+      const ttDia = dep==='SALLVE ES' ? tt.length : 0;
+      const sgS = sg.filter(r=>r._proj==='Pedidos Sallve');
+      const sgC = sg.filter(r=>r._proj==='Pedidos Contem1g');
+
+      registros.push({
+        data: dt, dow, segmento: dep,
+        total: sg.length,
+        total_sallve: sgS.length,
+        total_c1g: sgC.length,
+        no_prazo: sg.filter(r=>r._status==='no_prazo').length,
+        fora_prazo: sg.filter(r=>r._status==='fora_prazo').length,
+        backlog: bl, atraso_op: sg.filter(r=>r._atrOp).length,
+        atraso_sallve: sgS.filter(r=>r._atrOp).length,
+        atraso_c1g: sgC.filter(r=>r._atrOp).length,
+        prep, desp,
+        tiktok_ate12:0,tiktok_apos12:0,tiktok_prep:0,tiktok_desp:0,
+        tiktok_prazo:0,tiktok_24_48:0,tiktok_fora_sla:0,tiktok_backlog:0,
+        is_fds_fer: fdsFer,
+        es_cd_total: dep==='SALLVE ES' ? sg.length+ttDia : 0
+      });
+    });
+  });
+
+  return registros;
+}
+
+async function carregarDados() {
+  try {
+    document.getElementById('kpi-grid').innerHTML = '<div style="grid-column:1/-1;color:var(--muted);font-size:13px;padding:20px 0">Carregando dados...</div>';
+    const resp = await fetch(CSV_URL);
+    if(!resp.ok) throw new Error('Erro ao buscar CSV: ' + resp.status);
+    const text = await resp.text();
+    const rows = parseCSV(text);
+    if(!rows.length) throw new Error('Planilha vazia ou sem dados');
+
+    // Definir DADOS globalmente
+    DADOS = processarDados(rows);
+
+    // Atualizar datas do filtro
+    const datas = [...new Set(DADOS.map(d=>d.data))].sort();
+    const dtIni = document.getElementById('dt-ini');
+    const dtFim = document.getElementById('dt-fim');
+    dtIni.value = datas[0] || dtIni.value;
+    dtFim.value = datas[datas.length-1] || dtFim.value;
+    document.querySelector('.header-meta div').textContent =
+      'Periodo: ' + (datas[0]||'') + ' a ' + (datas[datas.length-1]||'');
+
+    renderAll();
+  } catch(err) {
+    document.getElementById('kpi-grid').innerHTML =
+      '<div style="grid-column:1/-1;background:var(--red-dim);border:1px solid var(--red);border-radius:8px;padding:16px;color:var(--red);font-size:13px">' +
+      '<strong>Erro ao carregar dados:</strong> ' + err.message +
+      '<br><small>Verifique se a planilha esta publicada na web (Arquivo > Compartilhar > Publicar na web).</small></div>';
+  }
+}
+const SEG = {TODOS:'TODOS', ES:'SALLVE ES', SP:'SALLVE SP', RJ:'SALLVE RJ', TT:'TIKTOK J\u0026T'};
+const CORES = {'SALLVE ES':'#14b8a6','SALLVE SP':'#a855f7','SALLVE RJ':'#22c55e','TIKTOK J\u0026T':'#f97316'};
+const DOW = ['Seg','Ter','Qua','Qui','Sex','Sab','Dom'];
+const FERIADOS = ['2026-06-04','2026-09-07','2026-10-12','2026-11-02','2026-11-15','2026-11-20','2026-12-25'];
+let segBtn = 'TODOS';
+let charts = {};
+
+function segVal(){ return SEG[segBtn] || 'TODOS'; }
+function fmt(n){ return Number(n).toLocaleString('pt-BR'); }
+function pct(a,b){ return b===0?'-':(a/b*100).toFixed(1)+'%'; }
+function dtLabel(d){ const x=new Date(d+'T12:00:00'); return DOW[x.getDay()===0?6:x.getDay()-1]+' '+x.getDate()+'/'+(x.getMonth()+1).toString().padStart(2,'0'); }
+function isFDS(dow){ return dow===5||dow===6; }
+function isFeriado(d){ return FERIADOS.includes(d); }
+
+function getDados(){
+  const ini=document.getElementById('dt-ini').value, fim=document.getElementById('dt-fim').value;
+  const sv=segVal();
+  return DADOS.filter(d=>d.data>=ini&&d.data<=fim&&(sv==='TODOS'?d.segmento!=='TIKTOK J\u0026T':d.segmento===sv));
+}
+function getDatas(){
+  const ini=document.getElementById('dt-ini').value, fim=document.getElementById('dt-fim').value;
+  return [...new Set(DADOS.filter(d=>d.data>=ini&&d.data<=fim).map(d=>d.data))].sort();
+}
+function getSegs(){
+  const sv=segVal();
+  return sv==='TODOS'?['SALLVE ES','SALLVE SP','SALLVE RJ']:[sv];
+}
+function toggleSeg(btn){
+  document.querySelectorAll('.pill').forEach(p=>p.classList.remove('active'));
+  btn.classList.add('active'); segBtn=btn.dataset.seg; renderAll();
+}
+function aplicarFiltros(){ renderAll(); }
+function resetFiltros(){ document.getElementById('dt-ini').value='2026-05-12'; document.getElementById('dt-fim').value='2026-06-24'; renderAll(); }
+function dc(id){ if(charts[id]){charts[id].destroy();delete charts[id];} }
+
+function renderKPIs(){
+  const dados=getDados();
+  const ini=document.getElementById('dt-ini').value, fim=document.getElementById('dt-fim').value;
+  const total=dados.reduce((s,d)=>s+d.total,0);
+  const np=dados.reduce((s,d)=>s+d.no_prazo,0);
+  const fp=dados.reduce((s,d)=>s+d.fora_prazo,0);
+  const datas=getDatas(), lastD=datas[datas.length-1];
+  const segsAll=segVal()==='TODOS'?['SALLVE ES','SALLVE SP','SALLVE RJ']:getSegs();
+  const bl=DADOS.filter(d=>d.data===lastD&&segsAll.includes(d.segmento)).reduce((s,d)=>s+d.backlog,0);
+  const aop=dados.reduce((s,d)=>s+d.atraso_op,0);
+  const ot=total>0?(np/total*100).toFixed(1):0;
+  const otC=ot>=90?'green':ot>=75?'amber':'red';
+  const allP=DADOS.filter(d=>d.data>=ini&&d.data<=fim&&d.segmento!=='TIKTOK J\u0026T');
+  const tS=allP.reduce((s,d)=>s+(d.total_sallve||0),0);
+  const tC=allP.reduce((s,d)=>s+(d.total_c1g||0),0);
+  document.getElementById('kpi-grid').innerHTML=
+    '<div class="kpi blue"><div class="kpi-label">Total Pedidos</div><div class="kpi-value">'+fmt(total)+'</div><div class="kpi-sub">no per&#237;odo</div></div>'+
+    '<div class="kpi teal"><div class="kpi-label">Sallve</div><div class="kpi-value">'+fmt(tS)+'</div><div class="kpi-sub">'+pct(tS,total)+' do total</div></div>'+
+    '<div class="kpi orange"><div class="kpi-label">C1G</div><div class="kpi-value">'+fmt(tC)+'</div><div class="kpi-sub">'+pct(tC,total)+' do total</div></div>'+
+    '<div class="kpi '+otC+'"><div class="kpi-label">On-Time Rate</div><div class="kpi-value">'+ot+'%</div><div class="kpi-sub">'+fmt(np)+' no prazo</div></div>'+
+    '<div class="kpi amber"><div class="kpi-label">Fora do Prazo</div><div class="kpi-value">'+fmt(fp)+'</div><div class="kpi-sub">'+pct(fp,total)+' do total</div></div>'+
+    '<div class="kpi red"><div class="kpi-label">Backlog Atual</div><div class="kpi-value">'+fmt(bl)+'</div><div class="kpi-sub">sem expedi&#231;&#227;o</div></div>'+
+    '<div class="kpi purple"><div class="kpi-label">Atraso Operacional</div><div class="kpi-value">'+fmt(aop)+'</div><div class="kpi-sub">Unilog atrasou</div></div>';
+  const ab=document.getElementById('alert-bar');
+  if(bl>500){ab.style.display='flex';ab.className='alert-bar danger';ab.innerHTML='Backlog elevado: '+fmt(bl)+' pedidos sem expedi&#231;&#227;o.';}
+  else if(ot<85){ab.style.display='flex';ab.className='alert-bar warn';ab.innerHTML='On-time abaixo de 85% ('+ot+'%).';}
+  else{ab.style.display='flex';ab.className='alert-bar ok';ab.innerHTML='Opera&#231;&#227;o dentro dos par&#226;metros. On-time: '+ot+'% | Backlog: '+fmt(bl)+'.';}
+}
+
+function renderVolumeChart(){
+  dc('vol');
+  const datas=getDatas();
+  const sv=segVal();
+  const segsV=sv==='TODOS'?['SALLVE ES','SALLVE SP','SALLVE RJ']:sv==='TIKTOK J\u0026T'?['TIKTOK J\u0026T']:getSegs();
+  const datasets=segsV.map(seg=>({label:seg.replace('SALLVE ','').replace('TIKTOK J\u0026T','TikTok'),data:datas.map(d=>{const r=DADOS.find(x=>x.data===d&&x.segmento===seg);return r?r.total:0;}),backgroundColor:CORES[seg]+'99',borderColor:CORES[seg],borderWidth:1.5,borderRadius:2}));
+  const bgP={id:'bg',beforeDatasetsDraw(chart){
+    const{ctx,chartArea:{top,bottom},scales:{x}}=chart;
+    datas.forEach((d,i)=>{
+      const r=DADOS.find(x=>x.data===d); if(!r) return;
+      const fds=r.dow>=5, fer=FERIADOS.includes(d);
+      if(!fds&&!fer) return;
+      const w=(x.getPixelForValue(1)-x.getPixelForValue(0));
+      const x1=x.getPixelForValue(i)-w/2, x2=x1+w;
+      ctx.save(); ctx.fillStyle=fer?'rgba(239,68,68,.07)':'rgba(168,85,247,.07)'; ctx.fillRect(x1,top,x2-x1,bottom-top); ctx.restore();
+    });
+  }};
+  charts['vol']=new Chart(document.getElementById('chart-volume'),{type:'bar',data:{labels:datas.map(d=>dtLabel(d)),datasets},options:{responsive:true,plugins:{legend:{labels:{color:'#7b80a0',font:{size:11}}}},scales:{x:{stacked:true,ticks:{color:'#7b80a0',font:{size:10}},grid:{color:'rgba(255,255,255,.04)'}},y:{stacked:true,ticks:{color:'#7b80a0'},grid:{color:'rgba(255,255,255,.04)'}}}},plugins:[bgP]});
+}
+
+function renderPizzaChart(){
+  dc('pizza');
+  const dados=getDados();
+  const np=dados.reduce((s,d)=>s+d.no_prazo,0), fp=dados.reduce((s,d)=>s+d.fora_prazo,0), bl=dados.reduce((s,d)=>s+d.backlog,0);
+  charts['pizza']=new Chart(document.getElementById('chart-pizza'),{type:'doughnut',data:{labels:['No Prazo','Fora do Prazo','Backlog'],datasets:[{data:[np,fp,bl],backgroundColor:['#22c55e99','#ef444499','#f59e0b99'],borderColor:['#22c55e','#ef4444','#f59e0b'],borderWidth:1.5}]},options:{responsive:true,plugins:{legend:{position:'bottom',labels:{color:'#7b80a0',font:{size:11},padding:12}}}}});
+}
+
+function renderBacklogChart(){
+  dc('backlog');
+  const datas=getDatas(), segs=getSegs();
+  const ds=segs.map(seg=>({label:seg.replace('SALLVE ',''),data:datas.map(d=>{const r=DADOS.find(x=>x.data===d&&x.segmento===seg);return r?r.backlog:0;}),borderColor:CORES[seg],backgroundColor:CORES[seg]+'22',fill:true,tension:.3,pointRadius:3}));
+  charts['backlog']=new Chart(document.getElementById('chart-backlog'),{type:'line',data:{labels:datas.map(d=>{const dt=new Date(d+'T12:00:00');return dt.getDate()+'/'+(dt.getMonth()+1).toString().padStart(2,'0');}),datasets:ds},options:{responsive:true,plugins:{legend:{labels:{color:'#7b80a0',font:{size:11}}}},scales:{x:{ticks:{color:'#7b80a0',font:{size:10}},grid:{color:'rgba(255,255,255,.04)'}},y:{ticks:{color:'#7b80a0'},grid:{color:'rgba(255,255,255,.04)'}}}}}); 
+}
+
+function renderOnTimeChart(){
+  dc('ontime');
+  const datas=getDatas(), segs=getSegs();
+  const ds=segs.map(seg=>({label:seg.replace('SALLVE ',''),data:datas.map(d=>{const r=DADOS.find(x=>x.data===d&&x.segmento===seg);return r&&r.total>0?parseFloat((r.no_prazo/r.total*100).toFixed(1)):null;}),borderColor:CORES[seg],backgroundColor:'transparent',tension:.3,pointRadius:3,spanGaps:true}));
+  charts['ontime']=new Chart(document.getElementById('chart-ontime'),{type:'line',data:{labels:datas.map(d=>{const dt=new Date(d+'T12:00:00');return dt.getDate()+'/'+(dt.getMonth()+1).toString().padStart(2,'0');}),datasets:ds},options:{responsive:true,plugins:{legend:{labels:{color:'#7b80a0',font:{size:11}}}},scales:{x:{ticks:{color:'#7b80a0',font:{size:10}},grid:{color:'rgba(255,255,255,.04)'}},y:{min:0,max:100,ticks:{color:'#7b80a0',callback:v=>v+'%'},grid:{color:'rgba(255,255,255,.04)'}}}}});
+}
+
+function renderCapacidade(){
+  dc('cap');
+  const ini=document.getElementById('dt-ini').value, fim=document.getElementById('dt-fim').value;
+  const datas=[...new Set(DADOS.filter(d=>d.data>=ini&&d.data<=fim).map(d=>d.data))].sort();
+  const sv=segVal();
+  const todas=[
+    {label:'ES (Sallve+TikTok)',seg:'SALLVE ES',campo:'es_cd_total',cap:4000,cor:'#14b8a6'},
+    {label:'ES Sallve',seg:'SALLVE ES',campo:'total',cap:null,cor:'#0d9488'},
+    {label:'ES TikTok',seg:'TIKTOK J\u0026T',campo:'total',cap:null,cor:'#f97316'},
+    {label:'SP',seg:'SALLVE SP',campo:'total',cap:1300,cor:'#a855f7'},
+    {label:'RJ',seg:'SALLVE RJ',campo:'total',cap:500,cor:'#22c55e'},
+    {label:'TikTok',seg:'TIKTOK J\u0026T',campo:'total',cap:null,cor:'#f97316'}
+  ];
+  let barras;
+  if(sv==='TODOS') barras=todas.slice(0,5);
+  else if(sv==='SALLVE ES') barras=todas.slice(0,3);
+  else if(sv==='SALLVE SP') barras=[todas[3]];
+  else if(sv==='SALLVE RJ') barras=[todas[4]];
+  else barras=[todas[5]];
+  const medias=barras.map(b=>{const v=datas.map(d=>{const r=DADOS.find(x=>x.data===d&&x.segmento===b.seg);return r?(r[b.campo]||0):0;}).filter(v=>v>0);return v.length?Math.round(v.reduce((a,c)=>a+c,0)/v.length):0;});
+  const picos=barras.map(b=>{const v=datas.map(d=>{const r=DADOS.find(x=>x.data===d&&x.segmento===b.seg);return r?(r[b.campo]||0):0;});return Math.max(0,...v);});
+  const caps=barras.map(b=>b.cap);
+  const cB=medias.map((m,i)=>{const c=barras[i].cap;if(!c)return barras[i].cor+'88';const p=m/c;return p>=.9?'rgba(239,68,68,.7)':p>=.7?'rgba(245,158,11,.7)':barras[i].cor+'88';});
+  const cBd=medias.map((m,i)=>{const c=barras[i].cap;if(!c)return barras[i].cor;const p=m/c;return p>=.9?'#ef4444':p>=.7?'#f59e0b':barras[i].cor;});
+  charts['cap']=new Chart(document.getElementById('cap-bars'),{type:'bar',data:{labels:barras.map(b=>b.label),datasets:[{label:'Media/dia',data:medias,backgroundColor:cB,borderColor:cBd,borderWidth:1.5,borderRadius:4,order:2},{label:'Pico/dia',data:picos,backgroundColor:'rgba(255,255,255,.04)',borderColor:'rgba(255,255,255,.2)',borderWidth:1,borderRadius:4,order:3},{label:'Capacidade',data:caps,type:'line',borderColor:'rgba(239,68,68,.6)',borderWidth:2,borderDash:[6,3],pointRadius:caps.map(v=>v?4:0),pointBackgroundColor:'rgba(239,68,68,.6)',fill:false,spanGaps:false,order:1}]},options:{responsive:true,plugins:{legend:{labels:{color:'#7b80a0',font:{size:11}}},tooltip:{callbacks:{label:c=>{if(c.dataset.label==='Capacidade'&&!c.parsed.y)return null;return c.dataset.label+': '+(c.parsed.y||0).toLocaleString('pt-BR');}}}},scales:{x:{ticks:{color:'#7b80a0',font:{size:10}},grid:{color:'rgba(255,255,255,.04)'}},y:{ticks:{color:'#7b80a0'},grid:{color:'rgba(255,255,255,.04)'},title:{display:true,text:'Pedidos/dia',color:'#7b80a0',font:{size:10}}}}}});
+}
+
+function renderFDSChart(){
+  dc('fds');
+  const ini=document.getElementById('dt-ini').value, fim=document.getElementById('dt-fim').value;
+  const sv=segVal();
+  const segsA=sv==='TODOS'?['SALLVE ES','SALLVE SP','SALLVE RJ','TIKTOK J\u0026T']:[sv];
+  const pd={};
+  DADOS.filter(d=>d.data>=ini&&d.data<=fim&&segsA.includes(d.segmento)).forEach(d=>{if(!pd[d.data])pd[d.data]={total:0,dow:d.dow};pd[d.data].total+=d.total;});
+  const pD={0:[],1:[],2:[],3:[],4:[],5:[],6:[]};
+  Object.values(pd).forEach(({total,dow})=>{if(pD[dow]!==undefined)pD[dow].push(total);});
+  const avg=a=>a.length?Math.round(a.reduce((x,y)=>x+y,0)/a.length):0;
+  const avgs=[0,1,2,3,4,5,6].map(i=>avg(pD[i]));
+  const cores=avgs.map((_,i)=>i>=5?'rgba(168,85,247,.6)':'rgba(59,130,246,.5)');
+  const bordas=avgs.map((_,i)=>i>=5?'#a855f7':'#3b82f6');
+  charts['fds']=new Chart(document.getElementById('chart-fds'),{type:'bar',data:{labels:DOW,datasets:[{label:'Media pedidos',data:avgs,backgroundColor:cores,borderColor:bordas,borderWidth:1.5,borderRadius:4}]},options:{responsive:true,plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>'Media: '+c.parsed.y.toLocaleString('pt-BR')+' pedidos'}}},scales:{x:{ticks:{color:'#7b80a0'},grid:{color:'rgba(255,255,255,.04)'}},y:{ticks:{color:'#7b80a0'},grid:{color:'rgba(255,255,255,.04)'}}}}});
+}
+
+function renderInsights(){
+  const ini=document.getElementById('dt-ini').value, fim=document.getElementById('dt-fim').value;
+  const sv=segVal();
+  const fmtN=n=>Number(n).toLocaleString('pt-BR');
+  const avg=a=>a.length?Math.round(a.reduce((x,y)=>x+y,0)/a.length):0;
+  let html='';
+
+  if(sv==='TODOS'){
+    const todos=DADOS.filter(d=>d.data>=ini&&d.data<=fim);
+    const ecomm=todos.filter(d=>d.segmento!=='TIKTOK J\u0026T');
+    const cds=['SALLVE ES','SALLVE SP','SALLVE RJ','TIKTOK J\u0026T'];
+    const otCD=cds.map(seg=>{const rows=todos.filter(d=>d.segmento===seg&&d.total>0);const tot=rows.reduce((s,d)=>s+d.total,0);const np=rows.reduce((s,d)=>s+d.no_prazo,0);return{seg,ot:tot>0?(np/tot*100).toFixed(1):null,tot};}).filter(x=>x.tot>0);
+    let otL='';
+    otCD.forEach(({seg,ot})=>{const cor=ot>=90?'var(--green)':ot>=75?'var(--amber)':'var(--red)';const nm=seg.replace('SALLVE ','').replace('TIKTOK J\u0026T','TikTok');otL+='<strong>'+nm+':</strong> <span style="color:'+cor+'">'+ot+'%</span> &nbsp;';});
+    html+='<div class="insight-box" style="border-color:var(--blue)"><strong style="color:var(--blue)">On-Time por CD:</strong><br>'+otL+'</div>';
+    const pior=otCD.filter(x=>x.ot!==null).sort((a,b)=>parseFloat(a.ot)-parseFloat(b.ot))[0];
+    if(pior&&parseFloat(pior.ot)<90) html+='<div class="insight-box red"><strong>Pior On-Time:</strong> '+pior.seg.replace('SALLVE ','')+' com <strong>'+pior.ot+'%</strong> no periodo.</div>';
+    let mAO=0,mAD='',mAS='';
+    ecomm.forEach(d=>{if(d.atraso_op>mAO){mAO=d.atraso_op;mAD=d.data;mAS=d.segmento;}});
+    if(mAO>0) html+='<div class="insight-box red"><strong>Maior atraso Unilog:</strong> '+mAS.replace('SALLVE ','')+' em '+dtLabel(mAD)+' com <strong>'+fmtN(mAO)+'</strong> pedidos.</div>';
+    const aS=ecomm.reduce((s,d)=>s+(d.atraso_sallve||0),0), aC=ecomm.reduce((s,d)=>s+(d.atraso_c1g||0),0);
+    if(aS>0||aC>0) html+='<div class="insight-box"><strong>Atraso por Projeto:</strong> Sallve: <strong>'+fmtN(aS)+'</strong> | C1G: <strong>'+fmtN(aC)+'</strong> pedidos.</div>';
+    const pd={};todos.forEach(d=>{if(!pd[d.data])pd[d.data]={total:0,dow:d.dow};pd[d.data].total+=d.total;});
+    const avgSab=avg(Object.values(pd).filter(x=>x.dow===5).map(x=>x.total));
+    const avgDom=avg(Object.values(pd).filter(x=>x.dow===6).map(x=>x.total));
+    const avgSeg=avg(Object.values(pd).filter(x=>x.dow===0).map(x=>x.total));
+    if(avgSab>0||avgDom>0) html+='<div class="insight-box orange"><strong>Pico FDS:</strong> Sab='+fmtN(avgSab)+' Dom='+fmtN(avgDom)+' Seg='+fmtN(avgSeg)+' pedidos/dia (media). Reforco na segunda.</div>';
+
+  } else if(sv==='SALLVE ES'||sv==='SALLVE SP'||sv==='SALLVE RJ'){
+    const dados=DADOS.filter(d=>d.data>=ini&&d.data<=fim&&d.segmento===sv);
+    const nm=sv.replace('SALLVE ','');
+    const tot=dados.reduce((s,d)=>s+d.total,0), np=dados.reduce((s,d)=>s+d.no_prazo,0), fp=dados.reduce((s,d)=>s+d.fora_prazo,0);
+    const ot=tot>0?(np/tot*100).toFixed(1):0;
+    const otC=parseFloat(ot)>=90?'var(--green)':parseFloat(ot)>=75?'var(--amber)':'var(--red)';
+    html+='<div class="insight-box" style="border-color:'+otC+'"><strong style="color:'+otC+'">On-Time '+nm+':</strong> <strong style="color:'+otC+'">'+ot+'%</strong> | '+fmtN(np)+' prazo | '+fmtN(fp)+' fora | '+fmtN(tot)+' total.</div>';
+    let minOT=100,minD='',maxOT=0,maxD='';
+    dados.filter(d=>d.total>30).forEach(d=>{const o=d.no_prazo/d.total*100;if(o<minOT){minOT=o;minD=d.data;}if(o>maxOT){maxOT=o;maxD=d.data;}});
+    if(minOT<90&&minD) html+='<div class="insight-box red"><strong>Pior dia ('+nm+'):</strong> '+dtLabel(minD)+' com <strong>'+minOT.toFixed(0)+'%</strong>.</div>';
+    if(maxD) html+='<div class="insight-box" style="border-color:var(--green)"><strong style="color:var(--green)">Melhor dia ('+nm+'):</strong> '+dtLabel(maxD)+' com <strong>'+maxOT.toFixed(0)+'%</strong>.</div>';
+    const tAtr=dados.reduce((s,d)=>s+d.atraso_op,0);
+    let mAO=0,mAD=''; dados.forEach(d=>{if(d.atraso_op>mAO){mAO=d.atraso_op;mAD=d.data;}});
+    if(tAtr>0) html+='<div class="insight-box red"><strong>Atraso Unilog ('+nm+'):</strong> '+fmtN(tAtr)+' pedidos. Pior: '+dtLabel(mAD)+' com '+fmtN(mAO)+'.</div>';
+    const aS=dados.reduce((s,d)=>s+(d.atraso_sallve||0),0), aC=dados.reduce((s,d)=>s+(d.atraso_c1g||0),0);
+    if(aS>0||aC>0) html+='<div class="insight-box"><strong>Atraso por Projeto ('+nm+'):</strong> Sallve: <strong>'+fmtN(aS)+'</strong> | C1G: <strong>'+fmtN(aC)+'</strong>.</div>';
+    const pd={};dados.forEach(d=>{pd[d.data]={total:d.total,dow:d.dow};});
+    const avgSab=avg(Object.values(pd).filter(x=>x.dow===5).map(x=>x.total));
+    const avgDom=avg(Object.values(pd).filter(x=>x.dow===6).map(x=>x.total));
+    const avgSeg=avg(Object.values(pd).filter(x=>x.dow===0).map(x=>x.total));
+    if(avgSab>0||avgDom>0) html+='<div class="insight-box orange"><strong>FDS '+nm+':</strong> Sab='+fmtN(avgSab)+' Dom='+fmtN(avgDom)+' Seg='+fmtN(avgSeg)+' (media/dia).</div>';
+    const ld=[...new Set(dados.map(d=>d.data))].sort().slice(-1)[0];
+    const bl=dados.find(d=>d.data===ld)&&dados.find(d=>d.data===ld).backlog||0;
+    if(bl>0){const bc=bl>200?'var(--red)':bl>50?'var(--amber)':'var(--muted)';html+='<div class="insight-box" style="border-color:'+bc+'"><strong style="color:'+bc+'">Backlog '+nm+':</strong> <strong style="color:'+bc+'">'+fmtN(bl)+'</strong> pedidos em '+dtLabel(ld)+'.</div>';}
+
+  } else if(sv==='TIKTOK J\u0026T'){
+    const dados=DADOS.filter(d=>d.data>=ini&&d.data<=fim&&d.segmento==='TIKTOK J\u0026T');
+    const tot=dados.reduce((s,d)=>s+d.total,0);
+    const prazo=dados.reduce((s,d)=>s+d.tiktok_prazo,0);
+    const a24=dados.reduce((s,d)=>s+d.tiktok_24_48,0);
+    const fora=dados.reduce((s,d)=>s+d.tiktok_fora_sla,0);
+    const prep=dados.reduce((s,d)=>s+d.tiktok_prep,0);
+    const desp=dados.reduce((s,d)=>s+d.tiktok_desp,0);
+    const ate12=dados.reduce((s,d)=>s+d.tiktok_ate12,0);
+    const apos12=dados.reduce((s,d)=>s+d.tiktok_apos12,0);
+    const pP=tot>0?(prazo/tot*100).toFixed(1):0, p24=tot>0?(a24/tot*100).toFixed(1):0;
+    html+='<div class="insight-box orange"><strong>TikTok J\u0026T - '+fmtN(tot)+' pedidos:</strong><br>D+0: <strong>'+fmtN(prazo)+'</strong> ('+pP+'%) | 24-48h: <strong>'+fmtN(a24)+'</strong> ('+p24+'%) | Fora SLA: <strong style="color:'+(fora>0?'var(--red)':'var(--green)')+'">'+fmtN(fora)+'</strong></div>';
+    html+='<div class="insight-box" style="border-color:var(--teal)"><strong style="color:var(--teal)">Corte 12h:</strong> Ate 12h: <strong>'+fmtN(ate12)+'</strong> ('+( tot>0?(ate12/tot*100).toFixed(0):0)+'%) | Apos 12h: <strong>'+fmtN(apos12)+'</strong> ('+( tot>0?(apos12/tot*100).toFixed(0):0)+'%).</div>';
+    html+='<div class="insight-box" style="border-color:var(--purple)"><strong style="color:var(--purple)">Producao:</strong> Preparados: <strong>'+fmtN(prep)+'</strong> | Despachados: <strong>'+fmtN(desp)+'</strong>.</div>';
+    let minOT=100,minD=''; dados.filter(d=>d.total>20).forEach(d=>{const o=d.tiktok_prazo/d.total*100;if(o<minOT){minOT=o;minD=d.data;}});
+    if(minOT<80&&minD) html+='<div class="insight-box red"><strong>Pior dia D+0:</strong> '+dtLabel(minD)+' com <strong>'+minOT.toFixed(0)+'%</strong>.</div>';
+    const ld=[...new Set(dados.map(d=>d.data))].sort().slice(-1)[0];
+    const bl=dados.find(d=>d.data===ld)&&dados.find(d=>d.data===ld).tiktok_backlog||0;
+    if(bl>0){const bc=bl>100?'var(--red)':'var(--amber)';html+='<div class="insight-box" style="border-color:'+bc+'"><strong style="color:'+bc+'">Backlog TikTok:</strong> <strong style="color:'+bc+'">'+fmtN(bl)+'</strong> pedidos em '+dtLabel(ld)+'.</div>';}
+  }
+  if(!html) html='<div style="color:var(--muted);font-size:12px">Nenhum insight disponivel.</div>';
+  document.getElementById('insights-box').innerHTML=html;
+}
+
+function renderTikTokCharts(){
+  dc('ttcorte'); dc('ttprep');
+  const sv=segVal(), show=sv==='TIKTOK J\u0026T';
+  document.getElementById('tiktok-section').style.display=show?'block':'none';
+  if(!show) return;
+  const ini=document.getElementById('dt-ini').value, fim=document.getElementById('dt-fim').value;
+  const ttd=DADOS.filter(d=>d.data>=ini&&d.data<=fim&&d.segmento==='TIKTOK J\u0026T');
+  const lbs=ttd.map(d=>{const dt=new Date(d.data+'T12:00:00');return dt.getDate()+'/'+(dt.getMonth()+1).toString().padStart(2,'0');});
+  charts['ttcorte']=new Chart(document.getElementById('chart-tt-corte'),{type:'bar',data:{labels:lbs,datasets:[{label:'Ate 12h',data:ttd.map(d=>d.tiktok_ate12),backgroundColor:'rgba(234,179,8,.6)',borderColor:'#eab308',borderWidth:1,borderRadius:2},{label:'Apos 12h',data:ttd.map(d=>d.tiktok_apos12),backgroundColor:'rgba(249,115,22,.6)',borderColor:'#f97316',borderWidth:1,borderRadius:2}]},options:{responsive:true,plugins:{legend:{labels:{color:'#7b80a0',font:{size:11}}}},scales:{x:{stacked:true,ticks:{color:'#7b80a0',font:{size:10}},grid:{color:'rgba(255,255,255,.04)'}},y:{stacked:true,ticks:{color:'#7b80a0'},grid:{color:'rgba(255,255,255,.04)'}}}}});
+  charts['ttprep']=new Chart(document.getElementById('chart-tt-prep'),{type:'bar',data:{labels:lbs,datasets:[{label:'Preparados',data:ttd.map(d=>d.tiktok_prep),backgroundColor:'rgba(20,184,166,.5)',borderColor:'#14b8a6',borderWidth:1,borderRadius:2},{label:'Despachados',data:ttd.map(d=>d.tiktok_desp),backgroundColor:'rgba(168,85,247,.5)',borderColor:'#a855f7',borderWidth:1,borderRadius:2}]},options:{responsive:true,plugins:{legend:{labels:{color:'#7b80a0',font:{size:11}}}},scales:{x:{ticks:{color:'#7b80a0',font:{size:10}},grid:{color:'rgba(255,255,255,.04)'}},y:{ticks:{color:'#7b80a0'},grid:{color:'rgba(255,255,255,.04)'}}}}});
+}
+
+function renderEcommPrep(){
+  ['es','sp','rj'].forEach(k=>dc('prep_'+k));
+  const sv=segVal(), show=sv==='TODOS'||sv==='SALLVE ES'||sv==='SALLVE SP'||sv==='SALLVE RJ';
+  document.getElementById('ecomm-prep-section').style.display=show?'block':'none';
+  if(!show) return;
+  const ini=document.getElementById('dt-ini').value, fim=document.getElementById('dt-fim').value;
+  [{dep:'SALLVE ES',id:'chart-es-prep',key:'es',cor:'#14b8a6'},{dep:'SALLVE SP',id:'chart-sp-prep',key:'sp',cor:'#a855f7'},{dep:'SALLVE RJ',id:'chart-rj-prep',key:'rj',cor:'#22c55e'}].forEach(({dep,id,key,cor})=>{
+    if(sv!=='TODOS'&&sv!==dep) return;
+    const rows=DADOS.filter(d=>d.data>=ini&&d.data<=fim&&d.segmento===dep);
+    const lbs=rows.map(d=>dtLabel(d.data));
+    charts['prep_'+key]=new Chart(document.getElementById(id),{type:'bar',data:{labels:lbs,datasets:[{label:'Preparados',data:rows.map(d=>d.prep||0),backgroundColor:cor+'66',borderColor:cor,borderWidth:1.5,borderRadius:2},{label:'Despachados',data:rows.map(d=>d.desp||0),backgroundColor:'rgba(59,130,246,.4)',borderColor:'#3b82f6',borderWidth:1.5,borderRadius:2}]},options:{responsive:true,plugins:{legend:{labels:{color:'#7b80a0',font:{size:10}}}},scales:{x:{ticks:{color:'#7b80a0',font:{size:9}},grid:{color:'rgba(255,255,255,.04)'}},y:{ticks:{color:'#7b80a0'},grid:{color:'rgba(255,255,255,.04)'}}}}});
+  });
+}
+
+function renderTabela(){
+  const ini=document.getElementById('dt-ini').value, fim=document.getElementById('dt-fim').value;
+  const datas=[...new Set(DADOS.filter(d=>d.data>=ini&&d.data<=fim).map(d=>d.data))].sort();
+  const sv=segVal(), isTT=sv==='TIKTOK J\u0026T';
+  const segsRow=isTT?['TIKTOK J\u0026T']:getSegs();
+  const tbl=document.getElementById('tabela-diaria');
+  let thead='<tr><th>Data</th><th>CD</th><th>Total</th>';
+  if(isTT) thead+='<th>No Prazo (D+0)</th><th>24h~48h</th><th>Fora SLA</th><th>Backlog</th><th>Preparados</th><th>Despachados</th><th>Ate 12h</th><th>Apos 12h</th>';
+  else thead+='<th>No Prazo</th><th>On-Time</th><th>Fora Prazo</th><th>Backlog</th><th>Atraso Op.</th><th>Preparados</th><th>Despachados</th>';
+  thead+='</tr>';
+  tbl.querySelector('thead').innerHTML=thead;
+  let rows='';
+  datas.forEach(d=>{
+    const dow=DADOS.find(x=>x.data===d)?.dow??0;
+    const fds=dow>=5, fer=FERIADOS.includes(d);
+    const tag=fds?'<span class="tag-fim-semana">FDS</span>':fer?'<span class="tag-feriado">Feriado</span>':'';
+    const dl=dtLabel(d);
+    segsRow.forEach(seg=>{
+      const r=DADOS.find(x=>x.data===d&&x.segmento===seg);
+      if(!r) return;
+      const blB=r.backlog>200?'danger':r.backlog>50?'warn':r.backlog>0?'warn':'ok';
+      let row='<td>'+dl+tag+'</td><td style="color:'+(CORES[seg]||'#7b80a0')+';font-weight:600">'+seg.replace('SALLVE ','').replace('TIKTOK J\u0026T','TikTok J\u0026T')+'</td><td>'+r.total+'</td>';
+      if(isTT){
+        row+='<td>'+r.tiktok_prazo+'</td><td>'+r.tiktok_24_48+'</td>';
+        row+='<td><span class="badge '+(r.tiktok_fora_sla>0?'danger':'ok')+'">'+r.tiktok_fora_sla+'</span></td>';
+        row+='<td><span class="badge '+blB+'">'+r.backlog+'</span></td>';
+        row+='<td>'+r.tiktok_prep+'</td><td>'+r.tiktok_desp+'</td><td>'+r.tiktok_ate12+'</td><td>'+r.tiktok_apos12+'</td>';
+      } else {
+        const ot=r.total>0?(r.no_prazo/r.total*100).toFixed(1):'-';
+        const otN=parseFloat(ot), otB=isNaN(otN)?'info':otN>=90?'ok':otN>=75?'warn':'danger';
+        row+='<td>'+r.no_prazo+'</td>';
+        row+='<td><span class="badge '+otB+'">'+(ot==='-'?'-':ot+'%')+'</span></td>';
+        row+='<td><span class="badge '+(r.fora_prazo>0?'danger':'ok')+'">'+r.fora_prazo+'</span></td>';
+        row+='<td><span class="badge '+blB+'">'+r.backlog+'</span></td>';
+        row+='<td>'+(r.atraso_op>0?'<span class="badge danger">&#9888; '+r.atraso_op+'</span>':'<span class="badge ok">0</span>')+'</td>';
+        row+='<td>'+(r.prep||0)+'</td><td>'+(r.desp||0)+'</td>';
+      }
+      rows+='<tr>'+row+'</tr>';
+    });
+  });
+  tbl.querySelector('tbody').innerHTML=rows;
+}
+
+function renderAll(){
+  renderKPIs(); renderVolumeChart(); renderPizzaChart();
+  renderBacklogChart(); renderOnTimeChart(); renderCapacidade();
+  renderFDSChart(); renderInsights(); renderTikTokCharts();
+  renderEcommPrep(); renderTabela();
+}
+
+document.getElementById('last-update').textContent=new Date().toLocaleString('pt-BR');
+renderAll();
+</script>
+</body>
+</html>
