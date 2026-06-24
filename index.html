@@ -167,7 +167,8 @@ function renderKPIs(){
   const aop=dados.reduce((s,d)=>s+d.atraso_op,0);
   const ot=total>0?(np/total*100).toFixed(1):0;
   const otC=ot>=95?'green':ot>=85?'amber':'red';
-  const allP=DADOS.filter(d=>d.data>=ini&&d.data<=fim&&d.segmento!=='TIKTOK J\u0026T');
+  const svP=segVal();
+  const allP=DADOS.filter(d=>d.data>=ini&&d.data<=fim&&d.segmento!=='TIKTOK J\u0026T'&&(svP==='TODOS'||d.segmento===svP));
   const tS=allP.reduce((s,d)=>s+(d.total_sallve||0),0);
   const tC=allP.reduce((s,d)=>s+(d.total_c1g||0),0);
   document.getElementById('kpi-grid').innerHTML=
@@ -421,8 +422,4 @@ function renderAll(){
   renderEcommPrep(); renderTabela();
 }
 
-document.getElementById('last-update').textContent=new Date().toLocaleString('pt-BR');
-renderAll();
-</script>
-</body>
-</html>
+document.getElementById('last-update').textContent=new Date().toLocal
