@@ -173,12 +173,18 @@ function parseCSV(text) {
 
 function toDate(str) {
   if(!str || str.trim()==='') return null;
-  // Formatos: DD/MM/YYYY HH:MM:SS ou YYYY-MM-DD
   str = str.trim().replace(/"/g,'');
+  // Formato americano: M/D/YYYY H:MM:SS AM/PM (Google Sheets)
   if(str.includes('/')) {
     const parts = str.split(' ')[0].split('/');
-    if(parts.length===3) return parts[2]+'-'+parts[1].padStart(2,'0')+'-'+parts[0].padStart(2,'0');
+    if(parts.length===3) {
+      const m = parts[0].padStart(2,'0');
+      const d = parts[1].padStart(2,'0');
+      const y = parts[2];
+      return y+'-'+m+'-'+d;
+    }
   }
+  // Formato ISO: YYYY-MM-DD
   return str.slice(0,10);
 }
 
@@ -199,10 +205,16 @@ function processarDados(rows) {
     r._dtExp  = toDate(r['Dt Expedicao'] || r['Dt Expedição'] || '');
     r._horaImp = 0;
     const raw = r['Dt Importado'] || r['Dt Importação'] || '';
-    const timePart = raw.includes(' ') ? raw.split(' ')[1] : '';
-    if(timePart) {
+    const rawParts = raw.trim().split(' ');
+    // Formato: M/D/YYYY H:MM:SS AM/PM
+    if(rawParts.length >= 2) {
+      const timePart = rawParts[1];
+      const ampm = rawParts[2] || '';
       const tp = timePart.split(':');
-      r._horaImp = parseInt(tp[0]||0) + parseInt(tp[1]||0)/60;
+      let h = parseInt(tp[0]||0);
+      if(ampm.toUpperCase()==='PM' && h!==12) h += 12;
+      if(ampm.toUpperCase()==='AM' && h===12) h = 0;
+      r._horaImp = h + parseInt(tp[1]||0)/60;
     }
     r._isBacklog = !STATUS_EXPEDIDO.has(r._sit);
     if(r._dtImp) {
@@ -619,14 +631,4 @@ function renderTabela(){
 }
 
 function renderAll(){
-  renderKPIs(); renderVolumeChart(); renderPizzaChart();
-  renderBacklogChart(); renderOnTimeChart(); renderCapacidade();
-  renderFDSChart(); renderInsights(); renderTikTokCharts();
-  renderEcommPrep(); renderTabela();
-}
-
-document.getElementById('last-update').textContent=new Date().toLocaleString('pt-BR');
-renderAll();
-</script>
-</body>
-</html>
+  ren
