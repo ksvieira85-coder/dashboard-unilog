@@ -48,6 +48,8 @@
   .tag-feriado{display:inline-block;padding:1px 6px;border-radius:3px;font-size:9px;font-weight:700;background:rgba(239,68,68,.15);color:var(--red);margin-left:4px}
   .insight-box{background:var(--surface2);border-left:3px solid var(--purple);border-radius:0 8px 8px 0;padding:10px 12px;margin-bottom:8px;font-size:11px;line-height:1.6}
   .insight-box strong{color:var(--purple)}.insight-box.orange{border-color:var(--orange)}.insight-box.orange strong{color:var(--orange)}.insight-box.red{border-color:var(--red)}.insight-box.red strong{color:var(--red)}
+  .kpi-grid2{display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:10px;margin-bottom:20px;align-items:start}
+  .kpi-section-label{grid-column:1/-1;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:var(--muted);padding:4px 0 2px;border-bottom:1px solid var(--border);margin-bottom:2px}
   footer{border-top:1px solid var(--border);padding:16px 24px;color:var(--muted);font-size:11px;display:flex;justify-content:space-between;margin-top:32px}
   @media(max-width:900px){.charts-grid,.charts-grid-3,.charts-grid-2{grid-template-columns:1fr}}
 </style>
@@ -80,6 +82,7 @@
     &#9888; Os dados do dia mais recente podem estar incompletos — pedidos pendentes de embarque ainda podem ser atualizados.
   </div>
   <div class="kpi-grid" id="kpi-grid"></div>
+  <div class="kpi-grid2" id="kpi-grid2"></div>
   <div class="charts-grid">
     <div class="card"><div class="card-title">Volume Di&aacute;rio de Pedidos Importados</div><div class="card-sub">Por data de importa&ccedil;&atilde;o &mdash; FDS em roxo, feriados em vermelho</div><div><canvas id="chart-volume" height="90"></canvas></div></div>
     <div class="card"><div class="card-title">Status de Despacho</div><div class="card-sub">Distribui&ccedil;&atilde;o no per&iacute;odo</div><div><canvas id="chart-pizza" height="200"></canvas></div></div>
@@ -174,6 +177,20 @@ function renderKPIs(){
   const allP=DADOS.filter(d=>d.data>=ini&&d.data<=fim&&d.segmento!=='TIKTOK J\u0026T'&&(svP==='TODOS'||d.segmento===svP));
   const tS=allP.reduce((s,d)=>s+(d.total_sallve||0),0);
   const tC=allP.reduce((s,d)=>s+(d.total_c1g||0),0);
+  // KPIs secundários — Ecomm e TikTok
+  const ecommDados = DADOS.filter(d=>d.data>=ini&&d.data<=fim&&d.segmento!=='TIKTOK J&T'&&(svP==='TODOS'||d.segmento===svP));
+  const ttDados    = DADOS.filter(d=>d.data>=ini&&d.data<=fim&&d.segmento==='TIKTOK J&T');
+  const ecommPrep  = ecommDados.reduce((s,d)=>s+(d.prep||0),0);
+  const ecommDesp  = ecommDados.reduce((s,d)=>s+(d.no_prazo||0),0);
+  const ttPrep     = ttDados.reduce((s,d)=>s+(d.tiktok_prep||0),0);
+  const ttDesp     = ttDados.reduce((s,d)=>s+(d.tiktok_desp||0),0);
+  const ttPrazo    = ttDados.reduce((s,d)=>s+(d.tiktok_prazo||0),0);
+  const tt2448     = ttDados.reduce((s,d)=>s+(d.tiktok_24_48||0),0);
+  const ttFora     = ttDados.reduce((s,d)=>s+(d.tiktok_fora_sla||0),0);
+
+  const showTT    = svP==='TODOS'||svP==='TIKTOK J&T';
+  const showEcomm = svP==='TODOS'||svP==='SALLVE ES'||svP==='SALLVE SP'||svP==='SALLVE RJ';
+
   document.getElementById('kpi-grid').innerHTML=
     '<div class="kpi blue"><div class="kpi-label">Total Pedidos</div><div class="kpi-value">'+fmt(total)+'</div><div class="kpi-sub">no per&#237;odo</div></div>'+
     '<div class="kpi teal"><div class="kpi-label">Sallve</div><div class="kpi-value">'+fmt(tS)+'</div><div class="kpi-sub">'+pct(tS,total)+' do total</div></div>'+
@@ -182,6 +199,24 @@ function renderKPIs(){
     '<div class="kpi amber"><div class="kpi-label">Fora do Prazo</div><div class="kpi-value">'+fmt(fp)+'</div><div class="kpi-sub">'+pct(fp,total)+' do total</div></div>'+
     '<div class="kpi red"><div class="kpi-label">Backlog Atual</div><div class="kpi-value">'+fmt(bl)+'</div><div class="kpi-sub">sem expedi&#231;&#227;o</div></div>'+
     '<div class="kpi purple"><div class="kpi-label">Atraso Operacional</div><div class="kpi-value">'+fmt(aop)+'</div><div class="kpi-sub">Unilog atrasou</div></div>';
+
+  // Segunda linha — Ecomm
+  let kpi2 = '';
+  if(showEcomm){
+    kpi2 +=
+      '<div class="kpi-section-label">&#128230; Ecomm (ES &middot; SP &middot; RJ)</div>'+
+      '<div class="kpi teal" style="border-top-color:#14b8a6"><div class="kpi-label">Preparados</div><div class="kpi-value" style="font-size:20px">'+fmt(ecommPrep)+'</div><div class="kpi-sub">conferidos no per&#237;odo</div></div>'+
+      '<div class="kpi green" style="border-top-color:#22c55e"><div class="kpi-label">Despachados no Prazo</div><div class="kpi-value" style="font-size:20px">'+fmt(ecommDesp)+'</div><div class="kpi-sub">expedidos at&#233; D+1</div></div>';
+  }
+  if(showTT){
+    kpi2 +=
+      '<div class="kpi-section-label">&#128722; TikTok J&amp;T</div>'+
+      '<div class="kpi orange" style="border-top-color:#f97316"><div class="kpi-label">Preparados</div><div class="kpi-value" style="font-size:20px">'+fmt(ttPrep)+'</div><div class="kpi-sub">conferidos no per&#237;odo</div></div>'+
+      '<div class="kpi green"><div class="kpi-label">Despachados no Prazo</div><div class="kpi-value" style="font-size:20px">'+fmt(ttPrazo)+'</div><div class="kpi-sub">expedidos D+0</div></div>'+
+      '<div class="kpi blue"><div class="kpi-label">Despachados 24h~48h</div><div class="kpi-value" style="font-size:20px">'+fmt(tt2448)+'</div><div class="kpi-sub">dentro do SLA</div></div>'+
+      '<div class="kpi '+(ttFora>0?'red':'green')+'"><div class="kpi-label">Fora do SLA (&gt;48h)</div><div class="kpi-value" style="font-size:20px">'+fmt(ttFora)+'</div><div class="kpi-sub">'+(ttFora>0?'acima de 48h':'sem ocorr&#234;ncias')+'</div></div>';
+  }
+  document.getElementById('kpi-grid2').innerHTML = kpi2;
   const ab=document.getElementById('alert-bar');
   if(bl>500){ab.style.display='flex';ab.className='alert-bar danger';ab.innerHTML='Backlog elevado: '+fmt(bl)+' pedidos sem expedi&#231;&#227;o.';}
   else if(ot<95){ab.style.display='flex';ab.className='alert-bar warn';ab.innerHTML='On-time abaixo de 95% ('+ot+'%).';}
