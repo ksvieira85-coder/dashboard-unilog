@@ -173,7 +173,7 @@ function renderKPIs(){
   const fp=dados.reduce((s,d)=>s+d.fora_prazo,0);
   const datas=getDatas(), lastD=datas[datas.length-1];
   const segsAll=segVal()==='TODOS'?['SALLVE ES','SALLVE SP','SALLVE RJ']:getSegs();
-  const bl=DADOS.filter(d=>d.data===lastD&&segsAll.includes(d.segmento)).reduce((s,d)=>s+d.backlog,0);
+  const bl=DADOS.filter(d=>d.data>=ini&&d.data<=fim&&segsAll.includes(d.segmento)).reduce((s,d)=>s+d.backlog,0);
   const aop=dados.reduce((s,d)=>s+d.atraso_op,0);
   const ot=total>0?(np/total*100).toFixed(1):0;
   const otC=ot>=95?'green':ot>=85?'amber':'red';
