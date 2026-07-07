@@ -175,7 +175,7 @@ function renderKPIs(){
   const segsAll=segVal()==='TODOS'?['SALLVE ES','SALLVE SP','SALLVE RJ']:getSegs();
   const bl=DADOS.filter(d=>d.data>=ini&&d.data<=fim&&segsAll.includes(d.segmento)).reduce((s,d)=>s+d.backlog,0);
   const aop=dados.reduce((s,d)=>s+d.atraso_op,0);
-  const ot=total>0?(np/total*100).toFixed(1):0;
+  const ot=total>0?((total-fp)/total*100).toFixed(1):0;
   const otC=ot>=95?'green':ot>=85?'amber':'red';
   const svP=segVal();
   const allP=DADOS.filter(d=>d.data>=ini&&d.data<=fim&&d.segmento!=='TIKTOK J\u0026T'&&(svP==='TODOS'||d.segmento===svP));
@@ -335,7 +335,7 @@ function renderInsights(){
     const todos=DADOS.filter(d=>d.data>=ini&&d.data<=fim);
     const ecomm=todos.filter(d=>d.segmento!=='TIKTOK J\u0026T');
     const cds=['SALLVE ES','SALLVE SP','SALLVE RJ','TIKTOK J\u0026T'];
-    const otCD=cds.map(seg=>{const rows=todos.filter(d=>d.segmento===seg&&d.total>0);const tot=rows.reduce((s,d)=>s+d.total,0);const np=rows.reduce((s,d)=>s+d.no_prazo,0);return{seg,ot:tot>0?(np/tot*100).toFixed(1):null,tot};}).filter(x=>x.tot>0);
+    const otCD=cds.map(seg=>{const rows=todos.filter(d=>d.segmento===seg&&d.total>0);const tot=rows.reduce((s,d)=>s+d.total,0);const np=rows.reduce((s,d)=>s+d.no_prazo,0);const fp2=rows.reduce((s,d)=>s+d.fora_prazo,0);return{seg,ot:tot>0?((tot-fp2)/tot*100).toFixed(1):null,tot};}).filter(x=>x.tot>0);
     let otL='';
     otCD.forEach(({seg,ot})=>{const cor=ot>=90?'var(--green)':ot>=75?'var(--amber)':'var(--red)';const nm=seg.replace('SALLVE ','').replace('TIKTOK J\u0026T','TikTok');otL+='<strong>'+nm+':</strong> <span style="color:'+cor+'">'+ot+'%</span> &nbsp;';});
     html+='<div class="insight-box" style="border-color:var(--blue)"><strong style="color:var(--blue)">On-Time por CD:</strong><br>'+otL+'</div>';
@@ -356,7 +356,7 @@ function renderInsights(){
     const dados=DADOS.filter(d=>d.data>=ini&&d.data<=fim&&d.segmento===sv);
     const nm=sv.replace('SALLVE ','');
     const tot=dados.reduce((s,d)=>s+d.total,0), np=dados.reduce((s,d)=>s+d.no_prazo,0), fp=dados.reduce((s,d)=>s+d.fora_prazo,0);
-    const ot=tot>0?(np/tot*100).toFixed(1):0;
+    const ot=tot>0?((tot-fp)/tot*100).toFixed(1):0;
     const otC=parseFloat(ot)>=90?'var(--green)':parseFloat(ot)>=75?'var(--amber)':'var(--red)';
     html+='<div class="insight-box" style="border-color:'+otC+'"><strong style="color:'+otC+'">On-Time '+nm+':</strong> <strong style="color:'+otC+'">'+ot+'%</strong> | '+fmtN(np)+' prazo | '+fmtN(fp)+' fora | '+fmtN(tot)+' total.</div>';
     let minOT=100,minD='',maxOT=0,maxD='';
@@ -457,7 +457,7 @@ function renderTabela(){
         row+='<td>'+blTTHtml+'</td>';
         row+='<td>'+r.tiktok_prep+'</td><td>'+r.tiktok_desp+'</td><td>'+r.tiktok_ate12+'</td><td>'+r.tiktok_apos12+'</td>';
       } else {
-        const ot=r.total>0?(r.no_prazo/r.total*100).toFixed(1):'-';
+        const ot=r.total>0?((r.total-r.fora_prazo)/r.total*100).toFixed(1):'-';
         const otN=parseFloat(ot), otB=isNaN(otN)?'info':otN>=90?'ok':otN>=75?'warn':'danger';
         row+='<td>'+r.no_prazo+'</td>';
         row+='<td><span class="badge '+otB+'">'+(ot==='-'?'-':ot+'%')+'</span></td>';
