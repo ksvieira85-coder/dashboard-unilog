@@ -104,7 +104,6 @@
     <div class="card"><div class="card-title">Volume Di&aacute;rio de Pedidos Importados</div><div class="card-sub">Por data de importa&ccedil;&atilde;o &mdash; FDS em roxo, feriados em vermelho</div><div><canvas id="chart-volume" height="90"></canvas></div></div>
     <div class="card"><div class="card-title">Status de Despacho</div><div class="card-sub">Distribui&ccedil;&atilde;o no per&iacute;odo</div><div><canvas id="chart-pizza" height="200"></canvas></div></div>
   </div>
-  <div class="card" style="margin-bottom:16px"><div class="card-title">Taxa On-Time por CD</div><div class="card-sub">% despachos dentro do prazo</div><div><canvas id="chart-ontime" height="100"></canvas></div></div>
   <div class="card" style="margin-bottom:16px">
     <div class="section-label sallve">&#9889; An&aacute;lise de Capacidade Operacional</div>
     <div class="charts-grid-3">
@@ -310,12 +309,6 @@ function renderPizzaChart(){
   charts['pizza']=new Chart(document.getElementById('chart-pizza'),{type:'doughnut',data:{labels:['No Prazo','Fora do Prazo','Backlog'],datasets:[{data:[np,fp,bl],backgroundColor:['#22c55e99','#ef444499','#f59e0b99'],borderColor:['#22c55e','#ef4444','#f59e0b'],borderWidth:1.5}]},options:{responsive:true,plugins:{legend:{position:'bottom',labels:{color:'#7b80a0',font:{size:11},padding:12}}}}});
 }
 
-function renderOnTimeChart(){
-  dc('ontime');
-  const datas=getDatas(), segs=getSegs();
-  const ds=segs.map(seg=>({label:seg.replace('SALLVE ',''),data:datas.map(d=>{const r=DADOS.find(x=>x.data===d&&x.segmento===seg);return r&&r.total>0?parseFloat(((r.total-r.fora_prazo)/r.total*100).toFixed(1)):null;}),borderColor:CORES[seg],backgroundColor:'transparent',tension:.3,pointRadius:3,spanGaps:true}));
-  charts['ontime']=new Chart(document.getElementById('chart-ontime'),{type:'line',data:{labels:datas.map(d=>{const dt=new Date(d+'T12:00:00');return dt.getDate()+'/'+(dt.getMonth()+1).toString().padStart(2,'0');}),datasets:ds},options:{responsive:true,plugins:{legend:{labels:{color:'#7b80a0',font:{size:11}}}},scales:{x:{ticks:{color:'#7b80a0',font:{size:10}},grid:{color:'rgba(255,255,255,.04)'}},y:{min:0,max:100,ticks:{color:'#7b80a0',callback:v=>v+'%'},grid:{color:'rgba(255,255,255,.04)'}}}}});
-}
 
 function renderCapacidade(){
   dc('cap');
@@ -550,7 +543,7 @@ function getNota(data, cd){
 
 function renderAll(){
   renderKPIs(); renderVolumeChart(); renderPizzaChart();
-  renderOnTimeChart(); renderCapacidade();
+  renderCapacidade();
   renderFDSChart(); renderInsights(); renderTikTokCharts();
   renderEcommPrep(); renderTabela();
 }
